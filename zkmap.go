@@ -53,7 +53,7 @@ func (m *zkmap) Set(key string, value interface{}) error {
 
 	var data []byte
 	switch t.Kind() {
-	case reflect.Int:
+	case reflect.Int, reflect.Int32:
 		data = []byte(strconv.FormatInt(t.Int(), 10))
 	case reflect.Bool:
 		data = []byte(strconv.FormatBool(t.Bool()))
@@ -96,7 +96,7 @@ func (m *zkmap) Get(key string) (interface{}, error) {
 
 	var value interface{}
 	switch t.Kind() {
-	case reflect.Int:
+	case reflect.Int, reflect.Int32:
 		value, _ = strconv.Atoi(string(data))
 	case reflect.Bool:
 		value, _ = strconv.ParseBool(string(data))
