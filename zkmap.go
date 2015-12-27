@@ -12,10 +12,10 @@ import (
 )
 
 type zkmap struct {
-	zk    *zk.Conn
-	root  string
-	mutex sync.RWMutex
-	types map[string]reflect.Value
+	zk     *zk.Conn
+	root   string
+	mutex  sync.RWMutex
+	fields map[string]reflect.Value
 }
 
 // Create a map from given root path
@@ -40,7 +40,7 @@ func New(zkServer string, root string) (*zkmap, error) {
 		}
 	}
 
-	m := &zkmap{zk: c, root: root, types: make(map[string]reflect.Value)}
+	m := &zkmap{zk: c, root: root, fields: make(map[string]reflect.Value)}
 	return m, nil
 }
 
@@ -49,14 +49,12 @@ func (m *zkmap) Set(key string, value interface{}) error {
 	t := reflect.ValueOf(value)
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	m.types[key] = t
+	m.fields[key] = t
 
 	var data []byte
 	switch t.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case reflect.Int:
 		data = []byte(strconv.FormatInt(t.Int(), 10))
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		data = []byte(strconv.FormatUint(t.Uint(), 10))
 	case reflect.Bool:
 		data = []byte(strconv.FormatBool(t.Bool()))
 	case reflect.String:
@@ -94,13 +92,11 @@ func (m *zkmap) Get(key string) (interface{}, error) {
 
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
-	t := m.types[key]
+	t := m.fields[key]
 
 	var value interface{}
 	switch t.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		value, _ = strconv.Atoi(string(data))
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Int:
 		value, _ = strconv.Atoi(string(data))
 	case reflect.Bool:
 		value, _ = strconv.ParseBool(string(data))
